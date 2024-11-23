@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <!-- Bootstrap 4.4.1 CSS (Online CDN) -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" crossorigin="anonymous">
+  <!-- Font Awesome (For Icons) -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <!-- Google Fonts: Montserrat -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Custom CSS -->
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: #f4f4f4;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .navbar {
+      background-color: #007bff;
+      padding: 0.5rem 1rem;  /* Reduced padding to make navbar smaller */
+    }
+
+    .navbar-nav .nav-link {
+      color: white;
+    }
+
+    .navbar-nav .nav-link:hover {
+      color: #ccc;
+    }
+
+    .navbar-brand, .navbar-toggler-icon {
+      color: white;
+      font-size: 1rem;  /* Reduced font size to make navbar smaller */
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+    }
+
+    .user-info i {
+      font-size: 20px; /* Adjust the size of the icon */
+      margin-right: 4px; /* Space between icon and username */
+    }
+
+    .logout-button {
+      position: relative;
+      background-color: #dc3545; /* Red background color for logout button */
+      color: white;
+      font-size: 0.7rem;  /* Smaller font size */
+      padding: 4px 8px;
+      border: 2px solid #dc3545;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+      transition: background-color 0.3s, transform 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logout-button:hover {
+      background-color: #c82333;
+      transform: scale(1.05); /* Slightly enlarge the button on hover */
+    }
+
+    .logout-button:focus {
+      outline: none;
+    }
+
+    .logout-button:active {
+      background-color: #bd2130; /* Darker shade on click */
+    }
+
+    .logout-button span {
+      margin-left: 10px;
+    }
+
+    .spinner-border {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-width: 2px;
+      display: none; /* Hide spinner by default */
+    }
+
+    .balance-container {
+        padding: 3px;
+        margin-top: 5px;
+        border-radius: 10px;
+    }
+    
+    .balance-container h3 {
+        align-items: center;
+        text-align: center;
+        font-size: 1.2rem;
+        padding: auto auto;
+        margin-top: 7px;
+    }
+    
+    .balance-container #totalBalance {
+        font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar (Top Menu) -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <a class="navbar-brand" href="#">
+      <div class="user-info">
+        <!-- User Icon -->
+        <i class="fas fa-user-circle"></i>
+        <!-- Username -->
+        <span id="username-navbar">Username</span>
+      </div>
+    </a>
+    
+    <!-- Navbar Links (always visible) -->
+    <div class="navbar-nav ml-auto">
+      <!-- Logout Button -->
+      <div class="logout-btn-container">
+        <button class="logout-button" id="logoutButton">
+          <i class="fas fa-sign-out-alt"></i> <!-- Logout Icon -->
+          <span id="logoutText">Logout</span>
+          <div class="spinner-border text-light" id="loadingSpinner"></div> <!-- Loading spinner -->
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Dashboard Content -->
+  <div class="content">
+    <h2>Budgeting Area</h2>
+
+    <!-- Form for Adding Income or Expense -->
+    <div class="mb-4">
+      <label for="transactionType" class="form-label"><strong>Transaction Type:</strong></label>
+      <select id="transactionType" class="form-control">
+        <option value="income">Income</option>
+        <option value="expense">Expense</option>
+      </select>
+
+      <label for="descriptionInput" class="form-label mt-3"><strong>Description:</strong></label>
+      <input type="text" id="descriptionInput" class="form-control" placeholder="Enter description (e.g., Salary, Rent)" />
+
+      <label for="amountInput" class="form-label mt-3"><strong>Amount:</strong></label>
+      <input type="number" id="amountInput" class="form-control" placeholder="Enter amount (e.g., 5000)" />
+
+      <button class="btn btn-primary mt-3" id="addTransactionButton">Add Transaction</button>
+    </div>
+
+    <!-- Transaction Table -->
+    <h3>Transaction History</h3>
+    <div class="table-responsive">
+      <table class="table table-striped" id="transactionTable">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Date</th> <!-- Added Date column -->
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamic rows will be added here -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Total Balance Display -->
+    <div class="balance-container" id="balanceContainer">
+      <h3>Total Balance: <span id="totalBalance">0</span></h3>
+    </div>
+  </div>
+
+  <!-- Add this script at the bottom of your file -->
+  <script>
+    // Assuming `loggedInUser` is available from localStorage after login
+    const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+
+    // Check if loggedInUser exists and proceed
+    if (loggedInUser && loggedInUser.loginId) {
+      // Display the username in the navbar
+      document.getElementById('username-navbar').textContent = loggedInUser.username; // Display the username
+
+      // Add Transaction Button Functionality
+      document.getElementById('addTransactionButton').addEventListener('click', () => {
+        const transactionType = document.getElementById('transactionType').value;
+        const description = document.getElementById('descriptionInput').value.trim();
+        const amount = parseFloat(document.getElementById('amountInput').value);
+
+        if (description && !isNaN(amount) && amount > 0) {
+          const transaction = {
+            userId: loggedInUser.loginId, // Associate the transaction with the logged-in user
+            type: transactionType,
+            description: description,
+            amount: amount,
+            date: new Date().toISOString(), // Store the date when the transaction was added
+          };
+
+          // Retrieve existing transactions for this user from localStorage
+          let userTransactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+          // Add new transaction
+          userTransactions.push(transaction);
+
+          // Save updated transactions back to localStorage
+          localStorage.setItem('transactions', JSON.stringify(userTransactions));
+
+          // Clear inputs after adding the transaction
+          document.getElementById('descriptionInput').value = '';
+          document.getElementById('amountInput').value = '';
+
+          // Re-render the table with the updated transactions
+          renderTable();
+        } else {
+          alert('Please enter a valid description and amount!');
+        }
+      });
+
+      // Logout Button functionality
+      document.getElementById('logoutButton').addEventListener('click', () => {
+        // Show the spinner when logging out
+        document.getElementById('loadingSpinner').style.display = 'inline-block';
+
+        // Simulate logout process (e.g., clear localStorage and redirect)
+        setTimeout(() => {
+          // Clear the logged-in user from localStorage
+          localStorage.removeItem('loggedInUser');
+
+          // Redirect to login page (or home page, based on your app)
+          window.location.href = 'index.html';  // Make sure 'index.html' is your login page
+        }, 500); // Delay to show the spinner before redirecting
+      });
+    } else {
+      // If no user is logged in, redirect to the login page
+      window.location.href = 'index.html';
+    }
+
+    // Function to render the transaction table
+    function renderTable() {
+      const transactionTableBody = document.querySelector('#transactionTable tbody');
+      const totalBalanceDisplay = document.getElementById('totalBalance');
+      let totalBalance = 0;
+
+      // Retrieve the transactions for the logged-in user from localStorage
+      let userTransactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+      // Clear previous table rows
+      transactionTableBody.innerHTML = '';
+
+      // Loop through transactions and display them in the table
+      userTransactions.forEach((transaction, index) => {
+        if (transaction.userId === loggedInUser.loginId) { // Only show transactions for the current user
+          const row = document.createElement('tr');
+          row.className = transaction.type === 'income' ? 'table-success' : 'table-danger';
+
+          // Format the date
+          const transactionDate = new Date(transaction.date);
+          const formattedDate = `${transactionDate.getMonth() + 1}/${transactionDate.getDate()}/${transactionDate.getFullYear()}`;
+
+          row.innerHTML = `
+            <td>${transaction.type === 'income' ? 'Income' : 'Expense'}</td>
+            <td>${transaction.description}</td>
+            <td>${transaction.type === 'income' ? '+' : '-'}${transaction.amount}</td>
+            <td>${formattedDate}</td> <!-- Display the formatted date -->
+            <td>
+              <button class="btn btn-danger btn-sm delete-button" data-index="${index}">
+                Delete
+              </button>
+            </td>
+          `;
+          transactionTableBody.appendChild(row);
+
+          // Calculate the total balance
+          totalBalance += transaction.type === 'income' ? transaction.amount : -transaction.amount;
+        }
+      });
+
+      // Update total balance display
+      totalBalanceDisplay.textContent = totalBalance.toFixed(2);
+
+      // Reattach event listeners for delete buttons
+      attachDeleteListeners();
+    }
+
+    // Function to attach event listeners to delete buttons
+    function attachDeleteListeners() {
+      document.querySelectorAll('.delete-button').forEach(button => {
+        button.addEventListener('click', function () {
+          const index = parseInt(this.getAttribute('data-index'), 10);
+
+          // Retrieve the transactions from localStorage
+          let userTransactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+          // Remove the selected transaction
+          userTransactions.splice(index, 1);
+
+          // Save the updated transactions list to localStorage
+          localStorage.setItem('transactions', JSON.stringify(userTransactions));
+
+          // Re-render the table
+          renderTable();
+        });
+      });
+    }
+
+    window.onload = function () {
+      // Check if user is logged in, and render the table accordingly
+      if (!loggedInUser) {
+        window.location.href = 'index.html'; // Redirect to login page if no user is logged in
+      } else {
+        renderTable();
+      }
+    };
+  </script>
+</body>
+</html>
