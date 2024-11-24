@@ -208,7 +208,7 @@
 
     <!-- Total Balance Display -->
     <div class="balance-container" id="balanceContainer">
-      <h3>Total Balance: <span id="totalBalance">0</span></h3>
+      <h3>Total Balance: ₱<span id="totalBalance">0</span></h3>
     </div>
   </div>
 
@@ -301,7 +301,7 @@
           row.innerHTML = `
             <td>${transaction.type === 'income' ? 'Income' : 'Expense'}</td>
             <td>${transaction.description}</td>
-            <td>${transaction.type === 'income' ? '+' : '-'}${transaction.amount}</td>
+            <td>${transaction.type === 'income' ? '+ ₱' : '- ₱'}${transaction.amount}</td>
             <td>${formattedDate}</td> <!-- Display the formatted date -->
             <td>
               <button class="btn btn-danger btn-sm delete-button" data-index="${index}">
